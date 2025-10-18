@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Lead Schema",
+  "description": "Schema for validating lead data",
+  "properties": {
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Lead's email address"
+    },
+    "first_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "description": "Lead's first name"
+    },
+    "last_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "description": "Lead's last name"
+    },
+    "phone": {
+      "type": "string",
+      "pattern": "^[\\+]?[1-9][\\d]{0,15}$",
+      "description": "Lead's phone number"
+    },
+    "company": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "description": "Lead's company name"
+    },
+    "source": {
+      "type": "string",
+      "enum": ["website", "referral", "social", "email", "phone", "advertisement", "event", "other"],
+      "description": "Lead source"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata about the lead",
+      "properties": {
+        "utm_source": {
+          "type": "string",
+          "description": "UTM source parameter"
+        },
+        "utm_medium": {
+          "type": "string",
+          "description": "UTM medium parameter"
+        },
+        "utm_campaign": {
+          "type": "string",
+          "description": "UTM campaign parameter"
+        },
+        "utm_content": {
+          "type": "string",
+          "description": "UTM content parameter"
+        },
+        "utm_term": {
+          "type": "string",
+          "description": "UTM term parameter"
+        },
+        "referrer": {
+          "type": "string",
+          "description": "HTTP referrer"
+        },
+        "user_agent": {
+          "type": "string",
+          "description": "User agent string"
+        },
+        "ip_address": {
+          "type": "string",
+          "description": "IP address"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "required": ["email"],
+  "additionalProperties": false
+}
