@@ -34,6 +34,8 @@ class CreateLeadRequest extends FormRequest
             'source' => 'nullable|string|in:website,referral,social,email,phone,advertisement,event,other',
             'metadata' => 'nullable|array',
             'metadata.*' => 'nullable',
+            'correlation_id' => 'nullable|string|uuid',
+            'tenant_id' => 'nullable|string',
         ];
     }
 
@@ -45,8 +47,11 @@ class CreateLeadRequest extends FormRequest
      */
     public function withValidator(Validator $validator): void
     {
+        // Prepare data before validation
+        $this->prepareForValidation();
+        
         $validator->after(function (Validator $validator) {
-            // Perform JSON Schema validation
+            // Perform JSON Schema validation after data preparation
             $schemaValidator = app(JsonSchemaValidator::class);
             $errors = $schemaValidator->validate($this->all(), 'schemas/lead.json');
             
@@ -74,7 +79,7 @@ class CreateLeadRequest extends FormRequest
         // Set tenant ID from authenticated user
         if ($this->user()) {
             $this->merge([
-                'tenant_id' => $this->user()->id,
+                'tenant_id' => (string) $this->user()->id,
             ]);
         }
     }

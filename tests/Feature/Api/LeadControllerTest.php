@@ -4,8 +4,10 @@ namespace Tests\Feature\Api;
 
 use App\Models\Lead;
 use App\Models\User;
+use App\Services\Messaging\SqsPublisher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use Mockery;
 use Tests\TestCase;
 
 class LeadControllerTest extends TestCase
@@ -25,6 +27,18 @@ class LeadControllerTest extends TestCase
         ]);
         
         $this->token = $this->user->createToken('test-token')->plainTextToken;
+        
+        // Mock SQS Publisher
+        $this->mock(SqsPublisher::class, function ($mock) {
+            $mock->shouldReceive('publishLeadCreated')
+                ->andReturn(true);
+        });
+    }
+    
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
     }
 
     public function test_can_create_lead_with_valid_data(): void
@@ -158,7 +172,7 @@ class LeadControllerTest extends TestCase
 
     public function test_uses_provided_correlation_id(): void
     {
-        $correlationId = 'test-correlation-id-123';
+        $correlationId = '550e8400-e29b-41d4-a716-446655440000';
         $leadData = [
             'email' => 'test@example.com',
             'correlation_id' => $correlationId,

@@ -49,20 +49,20 @@ graph TD
 
 2. **Start the services:**
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
 3. **Install dependencies and setup database:**
    ```bash
-   docker-compose exec app composer install
-   docker-compose exec app php artisan key:generate
-   docker-compose exec app php artisan migrate
-   docker-compose exec app php artisan db:seed
+   docker compose exec app composer install
+   docker compose exec app php artisan key:generate
+   docker compose exec app php artisan migrate
+   docker compose exec app php artisan db:seed
    ```
 
 4. **Generate API documentation:**
    ```bash
-   docker-compose exec app php artisan l5-swagger:generate
+   docker compose exec app php artisan l5-swagger:generate
    ```
 
 5. **Access the application:**
@@ -198,15 +198,15 @@ SANCTUM_STATEFUL_DOMAINS=localhost:8080,127.0.0.1:8080
 
 ```bash
 # Run all tests
-docker-compose exec app php artisan test
+docker compose exec app php artisan test
 
 # Run specific test suites
-docker-compose exec app php artisan test --testsuite=Feature
-docker-compose exec app php artisan test --testsuite=Unit
-docker-compose exec app php artisan test --testsuite=Integration
+docker compose exec app php artisan test --testsuite=Feature
+docker compose exec app php artisan test --testsuite=Unit
+docker compose exec app php artisan test --testsuite=Integration
 
 # Run with coverage
-docker-compose exec app php artisan test --coverage
+docker compose exec app php artisan test --coverage
 ```
 
 ### Test Categories
@@ -271,7 +271,7 @@ LeadCreated events include these message attributes:
 
 4. **LocalStack Issues**
    - Verify LocalStack container is running
-   - Check LocalStack logs: `docker-compose logs localstack`
+   - Check LocalStack logs: `docker compose logs localstack`
    - Ensure queues exist in LocalStack
 
 ### Debug Mode

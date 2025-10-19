@@ -75,6 +75,15 @@
         }
       },
       "additionalProperties": true
+    },
+    "correlation_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique correlation ID for tracking the lead"
+    },
+    "tenant_id": {
+      "type": ["string", "integer"],
+      "description": "Tenant ID associated with the lead"
     }
   },
   "required": ["email"],

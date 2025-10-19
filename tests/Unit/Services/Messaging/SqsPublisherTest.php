@@ -5,6 +5,7 @@ namespace Tests\Unit\Services\Messaging;
 use App\Services\Messaging\SqsPublisher;
 use Aws\Sqs\SqsClient;
 use Aws\Result;
+use Illuminate\Support\Facades\Log;
 use Mockery;
 use Tests\TestCase;
 
@@ -16,13 +17,17 @@ class SqsPublisherTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
-        $this->mockSqsClient = Mockery::mock(SqsClient::class);
-        $this->publisher = new SqsPublisher($this->mockSqsClient);
-        
-        // Mock config values
+
+        // Mock config values before constructing the publisher so it captures them
         config(['sqs.leads_queue_url' => 'http://test-queue-url']);
         config(['sqs.log_queue_url' => 'http://test-log-queue-url']);
+
+        $this->mockSqsClient = Mockery::mock(SqsClient::class);
+        $this->publisher = new SqsPublisher($this->mockSqsClient);
+
+        // Mock Log facade
+        Log::shouldReceive('info')->andReturn(true);
+        Log::shouldReceive('error')->andReturn(true);
     }
 
     protected function tearDown(): void
@@ -50,14 +55,54 @@ class SqsPublisherTest extends TestCase
         $this->mockSqsClient
             ->shouldReceive('sendMessage')
             ->once()
-            ->withArgs(function ($args) use ($messageData) {
-                return $args['QueueUrl'] === 'http://test-queue-url' &&
-                       $args['MessageBody'] === json_encode($messageData) &&
-                       isset($args['MessageAttributes']['EventType']) &&
-                       isset($args['MessageAttributes']['CorrelationId']) &&
-                       isset($args['MessageAttributes']['TenantId']) &&
-                       isset($args['MessageAttributes']['Timestamp']);
-            })
+            ->with(Mockery::on(function ($args) use ($messageData) {
+                // Validate queue URL
+                if ($args['QueueUrl'] !== 'http://test-queue-url') {
+                    return false;
+                }
+                
+                // Validate message body
+                if ($args['MessageBody'] !== json_encode($messageData)) {
+                    return false;
+                }
+                
+                // Validate message attributes structure
+                $attrs = $args['MessageAttributes'] ?? [];
+                
+                // Check EventType
+                if (!isset($attrs['EventType']['StringValue']) || 
+                    $attrs['EventType']['StringValue'] !== 'LeadCreated' ||
+                    !isset($attrs['EventType']['DataType']) ||
+                    $attrs['EventType']['DataType'] !== 'String') {
+                    return false;
+                }
+                
+                // Check CorrelationId
+                if (!isset($attrs['CorrelationId']['StringValue']) || 
+                    $attrs['CorrelationId']['StringValue'] !== $messageData['correlation_id'] ||
+                    !isset($attrs['CorrelationId']['DataType']) ||
+                    $attrs['CorrelationId']['DataType'] !== 'String') {
+                    return false;
+                }
+                
+                // Check TenantId
+                if (!isset($attrs['TenantId']['StringValue']) || 
+                    $attrs['TenantId']['StringValue'] !== $messageData['tenant_id'] ||
+                    !isset($attrs['TenantId']['DataType']) ||
+                    $attrs['TenantId']['DataType'] !== 'String') {
+                    return false;
+                }
+                
+                // Check Timestamp exists and is a valid ISO string (dynamic value)
+                if (!isset($attrs['Timestamp']['StringValue']) || 
+                    empty($attrs['Timestamp']['StringValue']) ||
+                    !isset($attrs['Timestamp']['DataType']) ||
+                    $attrs['Timestamp']['DataType'] !== 'String') {
+                    return false;
+                }
+                
+                return true;
+            }))
             ->andReturn($expectedResult);
 
         $result = $this->publisher->publishLeadCreated($messageData);
@@ -112,14 +157,54 @@ class SqsPublisherTest extends TestCase
         $this->mockSqsClient
             ->shouldReceive('sendMessage')
             ->once()
-            ->withArgs(function ($args) use ($logData) {
-                return $args['QueueUrl'] === 'http://test-log-queue-url' &&
-                       $args['MessageBody'] === json_encode($logData) &&
-                       isset($args['MessageAttributes']['LogLevel']) &&
-                       isset($args['MessageAttributes']['CorrelationId']) &&
-                       isset($args['MessageAttributes']['TenantId']) &&
-                       isset($args['MessageAttributes']['Timestamp']);
-            })
+            ->with(Mockery::on(function ($args) use ($logData) {
+                // Validate queue URL
+                if ($args['QueueUrl'] !== 'http://test-log-queue-url') {
+                    return false;
+                }
+                
+                // Validate message body
+                if ($args['MessageBody'] !== json_encode($logData)) {
+                    return false;
+                }
+                
+                // Validate message attributes structure
+                $attrs = $args['MessageAttributes'] ?? [];
+                
+                // Check LogLevel
+                if (!isset($attrs['LogLevel']['StringValue']) || 
+                    $attrs['LogLevel']['StringValue'] !== $logData['level'] ||
+                    !isset($attrs['LogLevel']['DataType']) ||
+                    $attrs['LogLevel']['DataType'] !== 'String') {
+                    return false;
+                }
+                
+                // Check CorrelationId
+                if (!isset($attrs['CorrelationId']['StringValue']) || 
+                    $attrs['CorrelationId']['StringValue'] !== $logData['correlation_id'] ||
+                    !isset($attrs['CorrelationId']['DataType']) ||
+                    $attrs['CorrelationId']['DataType'] !== 'String') {
+                    return false;
+                }
+                
+                // Check TenantId
+                if (!isset($attrs['TenantId']['StringValue']) || 
+                    $attrs['TenantId']['StringValue'] !== $logData['tenant_id'] ||
+                    !isset($attrs['TenantId']['DataType']) ||
+                    $attrs['TenantId']['DataType'] !== 'String') {
+                    return false;
+                }
+                
+                // Check Timestamp exists (can be provided or generated)
+                if (!isset($attrs['Timestamp']['StringValue']) || 
+                    empty($attrs['Timestamp']['StringValue']) ||
+                    !isset($attrs['Timestamp']['DataType']) ||
+                    $attrs['Timestamp']['DataType'] !== 'String') {
+                    return false;
+                }
+                
+                return true;
+            }))
             ->andReturn($expectedResult);
 
         $result = $this->publisher->publishLogEvent($logData);
@@ -164,7 +249,9 @@ class SqsPublisherTest extends TestCase
             })
             ->andReturn(new Result(['MessageId' => 'test-message-id']));
 
-        $this->publisher->publishLeadCreated($messageData);
+        $result = $this->publisher->publishLeadCreated($messageData);
+        
+        $this->assertTrue($result);
     }
 
     public function test_merges_custom_attributes_with_defaults(): void
@@ -193,6 +280,8 @@ class SqsPublisherTest extends TestCase
             })
             ->andReturn(new Result(['MessageId' => 'test-message-id']));
 
-        $this->publisher->publishLeadCreated($messageData, $customAttributes);
+        $result = $this->publisher->publishLeadCreated($messageData, $customAttributes);
+        
+        $this->assertTrue($result);
     }
 }
