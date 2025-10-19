@@ -1,0 +1,99 @@
+name: Tests
+
+on:
+  push:
+    branches: [ "*" ]
+  pull_request:
+    branches: [ "*" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        php-version: [8.2]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-version }}
+        extensions: mbstring, xml, ctype, json, bcmath, pdo_sqlite, sqlite3, curl, zip, gd, intl, fileinfo, openssl, tokenizer
+        coverage: none
+
+    - name: Create .env file for testing
+      run: |
+        echo "APP_NAME=Laravel" >> .env
+        echo "APP_ENV=testing" >> .env
+        echo "APP_KEY=" >> .env
+        echo "APP_DEBUG=true" >> .env
+        echo "APP_URL=http://localhost" >> .env
+        echo "" >> .env
+        echo "LOG_CHANNEL=stack" >> .env
+        echo "LOG_DEPRECATIONS_CHANNEL=null" >> .env
+        echo "LOG_LEVEL=debug" >> .env
+        echo "" >> .env
+        echo "DB_CONNECTION=sqlite" >> .env
+        echo "DB_DATABASE=:memory:" >> .env
+        echo "" >> .env
+        echo "BROADCAST_DRIVER=log" >> .env
+        echo "CACHE_STORE=array" >> .env
+        echo "FILESYSTEM_DISK=local" >> .env
+        echo "QUEUE_CONNECTION=sync" >> .env
+        echo "SESSION_DRIVER=array" >> .env
+        echo "SESSION_LIFETIME=120" >> .env
+        echo "" >> .env
+        echo "MEMCACHED_HOST=127.0.0.1" >> .env
+        echo "" >> .env
+        echo "REDIS_HOST=127.0.0.1" >> .env
+        echo "REDIS_PASSWORD=null" >> .env
+        echo "REDIS_PORT=6379" >> .env
+        echo "" >> .env
+        echo "MAIL_MAILER=array" >> .env
+        echo "MAIL_HOST=mailpit" >> .env
+        echo "MAIL_PORT=1025" >> .env
+        echo "MAIL_USERNAME=null" >> .env
+        echo "MAIL_PASSWORD=null" >> .env
+        echo "MAIL_ENCRYPTION=null" >> .env
+        echo "MAIL_FROM_ADDRESS=\"hello@example.com\"" >> .env
+        echo "MAIL_FROM_NAME=\"\${APP_NAME}\"" >> .env
+        echo "" >> .env
+        echo "AWS_ACCESS_KEY_ID=" >> .env
+        echo "AWS_SECRET_ACCESS_KEY=" >> .env
+        echo "AWS_DEFAULT_REGION=us-east-1" >> .env
+        echo "AWS_BUCKET=" >> .env
+        echo "AWS_USE_PATH_STYLE_ENDPOINT=false" >> .env
+        echo "" >> .env
+        echo "PULSE_ENABLED=false" >> .env
+        echo "TELESCOPE_ENABLED=false" >> .env
+        echo "NIGHTWATCH_ENABLED=false" >> .env
+        echo "" >> .env
+        echo "SQS_LEADS_QUEUE_URL=http://localhost:4566/000000000000/test-leads-queue" >> .env
+        echo "SQS_LOG_QUEUE_URL=http://localhost:4566/000000000000/test-log-queue" >> .env
+
+    - name: Cache Composer dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.composer/cache/files
+        key: dependencies-php-${{ matrix.php-version }}-composer-${{ hashFiles('composer.lock') }}
+        restore-keys: |
+          dependencies-php-${{ matrix.php-version }}-composer-
+
+    - name: Install Composer dependencies
+      run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+    - name: Generate application key
+      run: php artisan key:generate
+
+    - name: Create SQLite database file
+      run: touch database/database.sqlite
+
+    - name: Run database migrations
+      run: php artisan migrate --force
+
+    - name: Run tests
+      run: php artisan test
