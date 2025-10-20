@@ -54,15 +54,16 @@ graph TD
 
 3. **Install dependencies and setup database:**
    ```bash
-   docker compose exec app composer install
-   docker compose exec app php artisan key:generate
-   docker compose exec app php artisan migrate
-   docker compose exec app php artisan db:seed
+   docker compose exec app bash
+   composer install
+   php artisan key:generate
+   php artisan migrate
+   php artisan db:seed
    ```
 
 4. **Generate API documentation:**
    ```bash
-   docker compose exec app php artisan l5-swagger:generate
+   php artisan l5-swagger:generate
    ```
 
 5. **Access the application:**
@@ -72,13 +73,33 @@ graph TD
 
 ### AWS Production Setup
 
-1. **Create SQS Queues:**
+1. **Configure AWS Credential:**
+   ```bash
+   aws configure
+   ```
+   
+   When successful, it should create the following files:
+   ```bash
+   ls -la ~/.aws/
+   
+   drwxr-xr-x 2 www-data www-data 4096 Oct 20 13:23 .
+   drwxrwxr-x 1 www-data www-data 4096 Oct 20 13:23 ..
+   -rw------- 1 www-data www-data   34 Oct 20 13:23 config
+   -rw------- 1 www-data www-data  116 Oct 20 13:23 credentials
+   ```
+
+
+2. **Create SQS Queues:**
    ```bash
    aws sqs create-queue --queue-name leads-queue
    aws sqs create-queue --queue-name log-events-queue
    ```
 
-2. **Configure IAM permissions:**
+3. **Configure IAM permissions:**
+   
+   a. In AWS Console, navigate to: **IAM → Policies → Create policy**
+   
+   b. Select **JSON** tab and paste the following policy:
    ```json
    {
      "Version": "2012-10-17",
@@ -97,14 +118,22 @@ graph TD
      ]
    }
    ```
+   
+   c. Click **Next**, add a **Policy name** (e.g., `CRMGatewaySQSPolicy`), then click **Create policy**
+   
+   d. Navigate to: **IAM → Users** → select the user you configured with `aws configure`
+   
+   e. Go to **Permissions** tab → **Add permissions** → **Attach policies directly**
+   
+   f. Search for and select the policy you just created, then click **Next** → **Add permissions**
 
-3. **Update environment variables:**
+4. **Update environment variables:**
    ```env
-   AWS_ACCESS_KEY_ID=your-access-key
-   AWS_SECRET_ACCESS_KEY=your-secret-key
-   AWS_DEFAULT_REGION=us-east-1
-   AWS_SQS_QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789012/leads-queue
-   AWS_SQS_LOG_QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789012/log-events-queue
+   AWS_ACCESS_KEY_ID={your-access-key}
+   AWS_SECRET_ACCESS_KEY={your-secret-key}
+   AWS_DEFAULT_REGION={your-region}
+   AWS_SQS_QUEUE_URL={queue-url}
+   AWS_SQS_LOG_QUEUE_URL={log-queue-url}
    LOG_MODE=remote
    ```
 
@@ -117,7 +146,7 @@ graph TD
    curl -X POST http://localhost:8080/api/auth/token \
      -H "Content-Type: application/json" \
      -d '{
-       "email": "admin@example.com",
+       "email": "test@example.com",
        "password": "password"
      }'
    ```
@@ -198,15 +227,12 @@ SANCTUM_STATEFUL_DOMAINS=localhost:8080,127.0.0.1:8080
 
 ```bash
 # Run all tests
-docker compose exec app php artisan test
+php artisan test
 
 # Run specific test suites
-docker compose exec app php artisan test --testsuite=Feature
-docker compose exec app php artisan test --testsuite=Unit
-docker compose exec app php artisan test --testsuite=Integration
-
-# Run with coverage
-docker compose exec app php artisan test --coverage
+php artisan test --testsuite=Feature
+php artisan test --testsuite=Unit
+php artisan test --testsuite=Integration
 ```
 
 ### Test Categories
