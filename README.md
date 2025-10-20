@@ -59,7 +59,6 @@ graph TD
    php artisan key:generate
    php artisan migrate
    php artisan db:seed
-
    ```
 
 4. **Generate API documentation:**
@@ -78,13 +77,16 @@ graph TD
    ```bash
    aws configure
    ```
-When successful it should created the following files:
-ls -la ~/.aws/
-
-drwxr-xr-x 2 www-data www-data 4096 Oct 20 13:23 .
-drwxrwxr-x 1 www-data www-data 4096 Oct 20 13:23 ..
--rw------- 1 www-data www-data   34 Oct 20 13:23 config
--rw------- 1 www-data www-data  116 Oct 20 13:23 credentials
+   
+   When successful, it should create the following files:
+   ```bash
+   ls -la ~/.aws/
+   
+   drwxr-xr-x 2 www-data www-data 4096 Oct 20 13:23 .
+   drwxrwxr-x 1 www-data www-data 4096 Oct 20 13:23 ..
+   -rw------- 1 www-data www-data   34 Oct 20 13:23 config
+   -rw------- 1 www-data www-data  116 Oct 20 13:23 credentials
+   ```
 
 
 2. **Create SQS Queues:**
@@ -94,8 +96,10 @@ drwxrwxr-x 1 www-data www-data 4096 Oct 20 13:23 ..
    ```
 
 3. **Configure IAM permissions:**
-   In AWS, go to IAM -> Policies -> Create policy
-   JSON and then copy and paste the below then "Next"
+   
+   a. In AWS Console, navigate to: **IAM → Policies → Create policy**
+   
+   b. Select **JSON** tab and paste the following policy:
    ```json
    {
      "Version": "2012-10-17",
@@ -114,10 +118,14 @@ drwxrwxr-x 1 www-data www-data 4096 Oct 20 13:23 ..
      ]
    }
    ```
-   Add a "Policy name" -> "Create policy"
-   Now go to IAM -> Users -> the user you configured using aws configure.
-   Permissions -> Add permission -> Attach policies directly.
-   Search and select for the policy you just created and then 'Next' -> 'Add permissions'
+   
+   c. Click **Next**, add a **Policy name** (e.g., `CRMGatewaySQSPolicy`), then click **Create policy**
+   
+   d. Navigate to: **IAM → Users** → select the user you configured with `aws configure`
+   
+   e. Go to **Permissions** tab → **Add permissions** → **Attach policies directly**
+   
+   f. Search for and select the policy you just created, then click **Next** → **Add permissions**
 
 4. **Update environment variables:**
    ```env
@@ -222,10 +230,9 @@ SANCTUM_STATEFUL_DOMAINS=localhost:8080,127.0.0.1:8080
 php artisan test
 
 # Run specific test suites
-app php artisan test --testsuite=Feature
-app php artisan test --testsuite=Unit
-app php artisan test --testsuite=Integration
-
+php artisan test --testsuite=Feature
+php artisan test --testsuite=Unit
+php artisan test --testsuite=Integration
 ```
 
 ### Test Categories
