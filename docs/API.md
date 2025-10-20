@@ -382,7 +382,7 @@ $client = new Client(['base_uri' => 'http://localhost:8080/api/']);
 // Generate token
 $tokenResponse = $client->post('auth/token', [
     'json' => [
-        'email' => 'admin@example.com',
+        'email' => 'test@example.com',
         'password' => 'password'
     ]
 ]);
