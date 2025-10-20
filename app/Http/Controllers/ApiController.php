@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
  *     version="1.0.0",
  *     description="A Laravel API gateway that validates and publishes LeadCreated events to SQS with switchable logging",
  *     @OA\Contact(
- *         email="admin@example.com"
+ *         email="test@example.com"
  *     ),
  *     @OA\License(
  *         name="MIT",
